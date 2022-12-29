@@ -1,0 +1,48 @@
+# [START cloudbuild]
+steps:
+# This step fetchtes git submodulesbuilds.
+- name: gcr.io/cloud-builders/git
+  id: Git
+  args:
+  - 'submodule'
+  - 'update'
+  - '--init'
+  - '--recursive'
+
+# This step builds the container image.
+- name: 'gcr.io/cloud-builders/docker'
+  id: Build
+  args:
+  - 'build'
+  - '-t'
+  - 'eu.gcr.io/${PROJECT_ID}/hugo-website:${BUILD_ID}'
+  - '.'
+
+# This step pushes the image to Container Registry
+# The PROJECT_ID and SHORT_SHA variables are automatically
+# replaced by Cloud Build.
+- name: 'gcr.io/cloud-builders/docker'
+  id: Push
+  args:
+  - 'push'
+  - 'eu.gcr.io/${PROJECT_ID}/hugo-website:${BUILD_ID}'
+
+# deploy container image to Google Cloud Run
+- name: 'gcr.io/cloud-builders/gcloud'
+  id: Deploy
+  args:
+  - 'run'
+  - 'deploy'
+  - 'hugo-website'
+  - '--image'
+  - 'eu.gcr.io/${PROJECT_ID}/hugo-website:${BUILD_ID}'
+  - '--region'
+  - 'europe-north1'
+  - '--platform'
+  - 'managed'
+  - '--allow-unauthenticated'
+
+#images:
+#- gcr.io/${PROJECT_ID}/hugo-debug
+
+# [END cloudbuild]
